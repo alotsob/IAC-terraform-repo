@@ -10,7 +10,7 @@ resource "aws_security_group" "allow_http" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["76.21.150.248/32"]
+    cidr_blocks = var.ip_address
   }
 
   ingress {
@@ -18,7 +18,7 @@ resource "aws_security_group" "allow_http" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["76.21.150.248/32"]
+    cidr_blocks = var.ip_address
   }
 
   egress {
@@ -54,17 +54,26 @@ data "aws_ami" "golden_ami" {
 }
 */
 
+resource "random_integer" "random" {
+  min = 1
+  max = 100
+}
+
 data "aws_ssm_parameter" "ami" {
   name = "latest_golden_ami"
 }
 
 resource "aws_instance" "web" {
+  count = var.create_instance ? 2 : 0
   ami                         = data.aws_ssm_parameter.ami.value
   instance_type               = var.instance_type
-  associate_public_ip_address = true
+  associate_public_ip_address = var.assign_public_ip
   user_data                   = file("${path.module}/app1-http.sh")
   vpc_security_group_ids      = [aws_security_group.allow_http.id]
 
+tags_all= {
+Name = "web-${random_integer.random.id}"
+}
 
 }
 

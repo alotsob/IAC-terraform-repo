@@ -14,4 +14,21 @@ variable "aws_region" {
   description = "aws region"
 }
 
+variable "ip_address" {
+  type = list
+  default = ["76.21.150.248/32"]
+  description = " ip address for SG"
+}
 
+variable "assign_public_ip" {
+  type = bool
+  default = true
+  description = "associate public ip"
+}
+
+variable "create_instance" {
+  type = bool
+  default = true
+  description = "create instance"
+  
+}
