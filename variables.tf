@@ -3,8 +3,8 @@
 
 
 variable "instance_type" {
-  type        = string
-  default     = "t2.micro"
+  type        = list
+  default     = ["t2.micro", "t2.nano" ] 
   description = "ec2 instance type"
 }
 
@@ -15,20 +15,20 @@ variable "aws_region" {
 }
 
 variable "ip_address" {
-  type = list
-  default = ["76.21.150.248/32"]
+  type        = list(any)
+  default     = ["76.21.150.248/32"]
   description = " ip address for SG"
 }
 
 variable "assign_public_ip" {
-  type = bool
-  default = true
+  type        = bool
+  default     = true
   description = "associate public ip"
 }
 
 variable "create_instance" {
-  type = bool
-  default = true
+  type        = bool
+  default     = true
   description = "create instance"
-  
+
 }
