@@ -1,82 +1,44 @@
 
-
-resource "aws_security_group" "allow_http" {
-  name        = "allow_http"
-  description = "Allow http inbound traffic"
-  #  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    description = "http from VPC"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = var.ip_address
-  }
-
-  ingress {
-    description = "ssh from VPC"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = var.ip_address
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-
+resource "aws_vpc" "kojitechs" {
+  cidr_block = "10.0.0.0/16"
+  enable_dns_support = false
+  enable_dns_hostnames = false
 }
 
-/*
-data "aws_ami" "golden_ami" {
-  
-  most_recent      = true
-  owners           = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-kernel-5.10-hvm-*"]
-  }
-
-  filter {
-    name   = "root-device-type"
-    values = ["ebs"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-*/
-
-resource "random_integer" "random" {
-  min = 1
-  max = 100
+resource "aws_subnet" "public_subnet1" {
+  vpc_id     = local.vpc_id
+  cidr_block = var.cidr_pubsubnets[0]
+  availability_zone = var.pub_az[0]
+  map_public_ip_on_launch = true
 }
 
-data "aws_ssm_parameter" "ami" {
-  name = "latest_golden_ami"
+resource "aws_subnet" "public_subnet2" {
+  vpc_id     = local.vpc_id
+  cidr_block = var.cidr_pubsubnets[1]
+  availability_zone = var.pub_az[1]
+  map_public_ip_on_launch = true
 }
 
-# count mostly used for conditions
-
-resource "aws_instance" "web" {
-  count                       = var.create_instance ? 2 : 0
-  ami                         = data.aws_ssm_parameter.ami.value
-  instance_type               = var.instance_type
-  associate_public_ip_address = var.assign_public_ip
-  user_data                   = file("${path.module}/app1-http.sh")
-  vpc_security_group_ids      = [aws_security_group.allow_http.id]
-
-  tags_all = {
-    Name = "web-${random_integer.random.id}"
-  }
+resource "aws_subnet" "private_subnet1" {
+  vpc_id     = aws_vpc.kojitechs.id
+  cidr_block = var.cidr_prisubnets[0]
+  availability_zone = var.pri_az[0]
 }
 
+resource "aws_subnet" "private_subnet2" {
+  vpc_id     = local.vpc_id
+  cidr_block = var.cidr_prisubnets[1]
+  availability_zone = var.pri_az[1]
+}
 
+resource "aws_subnet" "database_subnet1" {
+  vpc_id     = local.vpc_id
+  cidr_block = var.cidr_dbsubnets[0]
+  availability_zone = var.db_az[0]
+}
 
+resource "aws_subnet" "database_subnet2" {
+  vpc_id     = local.vpc_id
+  cidr_block = var.cidr_dbsubnets[1]
+  availability_zone = var.db_az[1]
+}

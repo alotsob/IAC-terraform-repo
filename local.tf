@@ -19,5 +19,6 @@ locals {
     cell_name               = "WEB"
     component_name          = "IAC-TERRAFORM_REPO"
   }
+  vpc_id = aws_vpc.kojitechs.id
 }
  
