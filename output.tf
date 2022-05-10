@@ -31,3 +31,8 @@ output "ec2_arn" {
   description = "ec2 arn's"
   value       = [for arn in aws_instance.web : arn.arn]
 }
+  
+  # to map out public ip with running instances
+output "map_out" {
+  value = { for i, instance_id in aws_instance.web: i => instance_id.public_ip}
+}
