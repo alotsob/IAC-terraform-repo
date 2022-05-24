@@ -30,6 +30,18 @@ variable "create_vpc" {
 }
 
 variable "component_name" {
-  default = "IAC-TERRAFORM_REPO"
+  default = "IAC-TERRAFORM-REPO"
 
+}
+
+variable "http_port" {
+  default = 80
+  description = "http traffic from everywhere "
+  type = number
+}
+
+variable "https_port" {
+  default = 443
+  description = "https traffic from everywhere"
+  type = number
 }

@@ -5,6 +5,7 @@ locals {
   vpc_security_group_ids = [aws_security_group.web.id, aws_security_group.app.id]
 }
 
+/*
 resource "aws_security_group" "web" {
   name        = "${var.component_name}_web_sg" #format("%s-%s",var.component_name)
   description = "Allow ssh inbound traffic"
@@ -58,6 +59,8 @@ resource "aws_security_group" "app" {
     create_before_destroy = true 
   }
 }
+
+*/
 
 output "public_ip" {
   value = format("http://%s", aws_instance.web[0].public_ip)
