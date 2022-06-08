@@ -1,82 +1,62 @@
 
 locals {
-  subnet_id = [aws_subnet.public_subnet[0].id, aws_subnet.private_subnet[0].id]
-  Name      = ["web_instance", "app_instance"]
+  subnet_id = [aws_subnet.private_subnet[0].id, aws_subnet.private_subnet[1].id]
+  Name      = ["app1_instance", "app2_instance"]
+
   vpc_security_group_ids = [aws_security_group.web.id, aws_security_group.app.id]
+  mysql                  = jsondecode(data.aws_secretsmanager_secret_version.mysecret.secret_string)
 }
 
-/*
-resource "aws_security_group" "web" {
-  name        = "${var.component_name}_web_sg" #format("%s-%s",var.component_name)
-  description = "Allow ssh inbound traffic"
-  vpc_id      = local.vpc_id
-
-  ingress {
-    description = "http from VPC"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["76.21.150.248/32"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  tags = {
-    "key" = "${var.component_name}_web_sg"
-  }
-  lifecycle {
-    create_before_destroy = true 
-  }
+data "aws_secretsmanager_secret_version" "mysecret" {
+  secret_id = module.aurora.secrets_version.secret_id
 }
 
-resource "aws_security_group" "app" {
-  name        = "${var.component_name}_app_sg"
-  description = "Allow ssh inbound traffic from ${aws_security_group.web.id}"
-  vpc_id      = local.vpc_id
+# output "mysecret" {
+#   value = local.mysql["endpoint"]
+# }
 
-  ingress {
-    description          = "http from VPC"
-    from_port            = 22
-    to_port              = 22
-    protocol             = "tcp"
-    security_groups = [aws_security_group.web.id]
+data "aws_ami" "amzlinux2" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-gp2"]
   }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
   }
-  tags = {
-    "key" = "${var.component_name}_app_sg"
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
   }
-  lifecycle {
-    create_before_destroy = true 
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
   }
-}
-
-*/
-
-output "public_ip" {
-  value = format("http://%s", aws_instance.web[0].public_ip)
 }
 
 # count mostly used for conditions
 
 resource "aws_instance" "web" {
-  count                  = 2
-  ami                    = "ami-0022f774911c1d690" # use datasource to fetch the ami
+  depends_on = [module.aurora]
+  count                  = var.create_instance ? length(local.Name) : 0
+  ami                    = data.aws_ami.amzlinux2.id # use datasource to fetch the ami
   instance_type          = "t2.micro"
   subnet_id              = local.subnet_id[count.index]
-  user_data              = file("${path.module}/template/app1-http.sh")
   vpc_security_group_ids = [local.vpc_security_group_ids[count.index]]
   iam_instance_profile   = aws_iam_instance_profile.instance_profile.name
   key_name               = aws_key_pair.bastion_instance.id
+  user_data = templatefile("${path.module}/template/registrationapp.tmpl",
+    {
+      endpoint    = local.mysql["endpoint"]
+      port        = local.mysql["port"]
+      db_name     = local.mysql["dbname"]
+      db_user     = local.mysql["username"]
+      db_password = local.mysql["password"]
+    }
+
+  )
 
   tags = {
     Name = local.Name[count.index]
@@ -99,3 +79,9 @@ resource "aws_ssm_parameter" "ssm_kp" {
   }
 }
 
+resource "aws_lb_target_group_attachment" "test" {
+  count            = var.create_instance ? length(local.Name) : 0
+  target_group_arn = aws_lb_target_group.kojitechs-targetgroup.arn
+  target_id        = aws_instance.web[count.index].id
+  port = var.app_port
+}

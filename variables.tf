@@ -30,18 +30,41 @@ variable "create_vpc" {
 }
 
 variable "component_name" {
-  default = "IAC-TERRAFORM-REPO"
+  default = "iac-terraform-repo"
 
 }
+
+variable "app_port" {
+  default     = 8080
+  description = "https  application traffic  "
+  type        = number
+}
+
 
 variable "http_port" {
-  default = 80
-  description = "http traffic from everywhere "
-  type = number
+  default     = 80
+  description = "https traffic from everywhere"
+  type        = number
+}
+variable "https_port" {
+  default     = 443
+  description = "https traffic from everywhere"
+  type        = number
 }
 
-variable "https_port" {
-  default = 443
-  description = "https traffic from everywhere"
-  type = number
+variable "database_name" {
+  default     = "webappdb"
+  type        = string
+  description = "db name "
+}
+
+variable "master_username" {
+  default     = "dbadmin"
+  description = "db user name "
+}
+
+variable "create_instance" {
+  type        = bool
+  default     = "true"
+  description = "create instance"
 }
